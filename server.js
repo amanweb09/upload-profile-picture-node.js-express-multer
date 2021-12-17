@@ -19,12 +19,57 @@ app.set('views', path.join(__dirname, './views'));
 app.use(express.static(path.join(__dirname, './public')));
 const upload = require('./middleware/multer');
 
+//DATABASE
+const connection = require('./database/connection');
+const User = require('./models/user');
+connection()
+    .then(() => {
+        console.log('db connected ...');
+    })
+    .catch((err) => {
+        console.log(err);
+    })
 
 //ROUTES
 app.get('/', (req, res) => res.render('index'));
-app.post('/save-file', upload.single('image'), (req, res) => {
-    const fileName = req.file.filename;
+app.post('/save-file', upload.single('profilePicture'), async (req, res) => {
+    const { name, email, password } = req.body;
 
+    const fileName = req.file.filename;
+    const user = new User({ name, email, password, profilePicture: fileName })
+    try {
+        await user.save((err, data) => {
+            if (err) {
+                console.log(err);
+            }
+            if (data) {
+                console.log('user saved successfully ...');
+            }
+        })
+    } catch {
+        err => {
+            console.log(err);
+        }
+    }
+})
+app.get('/profile', async(req, res) => {
+    try {
+        const user = await User.find((err, users) => {
+            if(err) {
+                console.log(err);
+            }
+            if (users) {
+                res.render('profile', {
+                    user: users[0]
+                })
+            }
+        })
+    } catch {
+        err => {
+            console.log(err);
+        }
+    }
+    
 })
 
 
